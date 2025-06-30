@@ -12,7 +12,7 @@ spec:
     listKind: NodeLabelPolicyList
     plural: nodelabelpolicies
     singular: nodelabelpolicy
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -39,13 +39,48 @@ spec:
           spec:
             description: NodeLabelPolicySpec defines the desired state of NodeLabelPolicy.
             properties:
-              foo:
-                description: Foo is an example field of NodeLabelPolicy. Edit nodelabelpolicy_types.go
-                  to remove/update
-                type: string
+              labels:
+                additionalProperties:
+                  type: string
+                description: Labels defines the labels to be applied to selected nodes
+                type: object
+              strategy:
+                description: Strategy defines how to select nodes for label application
+                properties:
+                  count:
+                    description: Count specifies the number of nodes to select
+                    format: int32
+                    minimum: 1
+                    type: integer
+                  type:
+                    description: Type specifies the selection strategy type
+                    enum:
+                    - oldest
+                    - newest
+                    - random
+                    type: string
+                required:
+                - count
+                - type
+                type: object
+            required:
+            - labels
+            - strategy
             type: object
           status:
             description: NodeLabelPolicyStatus defines the observed state of NodeLabelPolicy.
+            properties:
+              lastReconcileTime:
+                description: LastReconcileTime is the timestamp of the last successful
+                  reconciliation
+                format: date-time
+                type: string
+              selectedNodes:
+                description: SelectedNodes contains the list of node names that currently
+                  have this policy's labels
+                items:
+                  type: string
+                type: array
             type: object
         type: object
     served: true

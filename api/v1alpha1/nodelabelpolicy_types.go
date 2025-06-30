@@ -23,22 +23,43 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// NodeLabelPolicyStrategy defines the strategy for selecting nodes
+type NodeLabelPolicyStrategy struct {
+	// Type specifies the selection strategy type
+	// +kubebuilder:validation:Enum=oldest;newest;random
+	Type string `json:"type"`
+
+	// Count specifies the number of nodes to select
+	// +kubebuilder:validation:Minimum=1
+	Count int32 `json:"count"`
+}
+
 // NodeLabelPolicySpec defines the desired state of NodeLabelPolicy.
 type NodeLabelPolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of NodeLabelPolicy. Edit nodelabelpolicy_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Strategy defines how to select nodes for label application
+	Strategy NodeLabelPolicyStrategy `json:"strategy"`
+
+	// Labels defines the labels to be applied to selected nodes
+	Labels map[string]string `json:"labels"`
 }
 
 // NodeLabelPolicyStatus defines the observed state of NodeLabelPolicy.
 type NodeLabelPolicyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// SelectedNodes contains the list of node names that currently have this policy's labels
+	SelectedNodes []string `json:"selectedNodes,omitempty"`
+
+	// LastReconcileTime is the timestamp of the last successful reconciliation
+	LastReconcileTime *metav1.Time `json:"lastReconcileTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Cluster
 // +kubebuilder:subresource:status
 
 // NodeLabelPolicy is the Schema for the nodelabelpolicies API.

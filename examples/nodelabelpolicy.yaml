@@ -1,0 +1,23 @@
+apiVersion: nlp.lento.dev/v1alpha1
+kind: NodeLabelPolicy
+metadata:
+  name: nodelabelpolicy-example
+spec:
+  strategy:
+    type: oldest
+    count: 1
+  # desired attached labels
+  labels:
+    managed-by: node-label-controller
+    node-label-controller/nodelabelpolicy: "true"
+    node-label-controller/datadog-agent: "true"
+  # TODO: add label selector
+  # selector:
+  #   matchLabels:
+  #     node-role.kubernetes.io/master: "true"
+  #   matchExpressions:
+  #     - key: kubernetes.io/arch
+  #       operator: In
+  #       values:
+  #         - amd64
+  #         - arm64

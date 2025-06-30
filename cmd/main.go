@@ -24,6 +24,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,6 +40,9 @@ import (
 
 	nlpv1alpha1 "github.com/jivvon/node-label-controller/api/v1alpha1"
 	"github.com/jivvon/node-label-controller/internal/controller"
+	"github.com/jivvon/node-label-controller/internal/controller/handlers"
+	"github.com/jivvon/node-label-controller/internal/external/k8s"
+	"github.com/jivvon/node-label-controller/internal/utils"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -86,6 +90,8 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	utils.SetupLogger(&opts)
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -184,7 +190,7 @@ func main() {
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "38977683.lento.dev",
+		LeaderElectionID:       "58076dd2.lento.dev",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -202,10 +208,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := (&controller.NodeLabelPolicyReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	k8sClient := k8s.NewClient(mgr.GetClient())
+	nodeLabelPolicyHandler := handlers.NewNodeLabelPolicyHandler(k8sClient)
+
+	if err := controller.NewNodeLabelPolicyReconciler(
+		k8sClient,
+		nodeLabelPolicyHandler,
+		mgr.GetScheme(),
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NodeLabelPolicy")
 		os.Exit(1)
 	}

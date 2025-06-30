@@ -25,4 +25,3 @@ resources:
 - nodelabelpolicy_admin_role.yaml
 - nodelabelpolicy_editor_role.yaml
 - nodelabelpolicy_viewer_role.yaml
-
