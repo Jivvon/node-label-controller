@@ -1,3 +1,4 @@
+// Package k8s provides abstractions and helpers for Kubernetes controller-runtime builder.
 package k8s
 
 import (
@@ -17,7 +18,7 @@ import (
 type Builder interface {
 	For(object client.Object, opts ...builder.ForOption) Builder
 	Owns(object client.Object, opts ...builder.OwnsOption) Builder
-	Watches(object client.Object, handler handler.EventHandler, opts ...builder.WatchesOption) Builder
+	Watches(object client.Object, eventHandler handler.EventHandler, opts ...builder.WatchesOption) Builder
 	WithEventFilter(p predicate.Predicate) Builder
 	WithOptions(options controller.Options) Builder
 	WithLogConstructor(logConstructor func(*reconcile.Request) logr.Logger) Builder
@@ -44,8 +45,8 @@ func (b *ctrlBuilder) Owns(object client.Object, opts ...builder.OwnsOption) Bui
 	return &ctrlBuilder{bld: b.bld.Owns(object, opts...)}
 }
 
-func (b *ctrlBuilder) Watches(object client.Object, handler handler.EventHandler, opts ...builder.WatchesOption) Builder {
-	return &ctrlBuilder{bld: b.bld.Watches(object, handler, opts...)}
+func (b *ctrlBuilder) Watches(object client.Object, eventHandler handler.EventHandler, opts ...builder.WatchesOption) Builder {
+	return &ctrlBuilder{bld: b.bld.Watches(object, eventHandler, opts...)}
 }
 
 func (b *ctrlBuilder) WithEventFilter(p predicate.Predicate) Builder {

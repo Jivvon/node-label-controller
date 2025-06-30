@@ -196,7 +196,7 @@ var _ = Describe("NodeLabelPolicyHandler", func() {
 
 			selected, err := handler.SelectNodes(ctx, []corev1.Node{}, strategy)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(selected).To(HaveLen(0))
+			Expect(selected).To(BeEmpty())
 		})
 
 		It("should limit selection to available nodes", func() {

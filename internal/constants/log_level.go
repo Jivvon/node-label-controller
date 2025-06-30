@@ -1,3 +1,4 @@
+// Package constants provides log level constants for the controller.
 package constants
 
 type LogLevel string

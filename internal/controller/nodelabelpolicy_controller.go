@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package controller implements the NodeLabelPolicy controller logic.
 package controller
 
 import (
@@ -66,21 +67,21 @@ func (r *NodeLabelPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	finalizerName := constants.FinalizerName
 
-	if nodeLabelPolicy.ObjectMeta.DeletionTimestamp.IsZero() {
-		if !containsString(nodeLabelPolicy.ObjectMeta.Finalizers, finalizerName) {
-			nodeLabelPolicy.ObjectMeta.Finalizers = append(nodeLabelPolicy.ObjectMeta.Finalizers, finalizerName)
+	if nodeLabelPolicy.DeletionTimestamp.IsZero() {
+		if !containsString(nodeLabelPolicy.Finalizers, finalizerName) {
+			nodeLabelPolicy.Finalizers = append(nodeLabelPolicy.Finalizers, finalizerName)
 			if err := r.client.Update(ctx, nodeLabelPolicy); err != nil {
 				log.Error(err, "Failed to add finalizer")
 				return ctrl.Result{}, err
 			}
 		}
 	} else {
-		if containsString(nodeLabelPolicy.ObjectMeta.Finalizers, finalizerName) {
+		if containsString(nodeLabelPolicy.Finalizers, finalizerName) {
 			if err := r.handler.CleanupLabelsFromAllNodes(ctx, nodeLabelPolicy.Name); err != nil {
 				log.Error(err, "Failed to cleanup labels during deletion")
 				return ctrl.Result{}, err
 			}
-			nodeLabelPolicy.ObjectMeta.Finalizers = removeString(nodeLabelPolicy.ObjectMeta.Finalizers, finalizerName)
+			nodeLabelPolicy.Finalizers = removeString(nodeLabelPolicy.Finalizers, finalizerName)
 			if err := r.client.Update(ctx, nodeLabelPolicy); err != nil {
 				log.Error(err, "Failed to remove finalizer")
 				return ctrl.Result{}, err
@@ -113,7 +114,7 @@ func (r *NodeLabelPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		log.V(4).Info("Selected node",
 			"index", i,
 			"nodeName", node.Name,
-			"creationTimestamp", node.CreationTimestamp.Time.Format("2006-01-02T15:04:05Z"))
+			"creationTimestamp", node.CreationTimestamp.Format("2006-01-02T15:04:05Z"))
 	}
 
 	managedByLabelKey := fmt.Sprintf("%s.%s/managed-by", constants.ManagedByLabelPrefix, nodeLabelPolicy.Name)
@@ -159,7 +160,7 @@ func (r *NodeLabelPolicyReconciler) nodeToNodeLabelPolicy(ctx context.Context, o
 		return []reconcile.Request{}
 	}
 
-	var requests []reconcile.Request
+	requests := make([]reconcile.Request, 0, len(nodeLabelPolicyList.Items))
 	for _, policy := range nodeLabelPolicyList.Items {
 		requests = append(requests, reconcile.Request{
 			NamespacedName: types.NamespacedName{
@@ -170,10 +171,10 @@ func (r *NodeLabelPolicyReconciler) nodeToNodeLabelPolicy(ctx context.Context, o
 	return requests
 }
 
-func NewNodeLabelPolicyReconciler(client k8s.Client, handler handlers.NodeLabelPolicyHandler, scheme *runtime.Scheme) *NodeLabelPolicyReconciler {
+func NewNodeLabelPolicyReconciler(k8sClient k8s.Client, policyHandler handlers.NodeLabelPolicyHandler, scheme *runtime.Scheme) *NodeLabelPolicyReconciler {
 	return &NodeLabelPolicyReconciler{
-		client:  client,
-		handler: handler,
+		client:  k8sClient,
+		handler: policyHandler,
 		Scheme:  scheme,
 	}
 }

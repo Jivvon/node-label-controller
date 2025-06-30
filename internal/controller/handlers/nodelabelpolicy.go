@@ -16,6 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const (
+	managedByLabelValue = "true"
+)
+
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 
 // NodeLabelPolicyHandler handles the business logic for NodeLabelPolicy reconciliation
@@ -61,11 +65,11 @@ func (h *nodeLabelPolicyHandler) SelectNodes(ctx context.Context, nodes []corev1
 	switch strategy.Type {
 	case "oldest":
 		sort.Slice(nodeCopies, func(i, j int) bool {
-			return nodeCopies[i].CreationTimestamp.Time.Before(nodeCopies[j].CreationTimestamp.Time)
+			return nodeCopies[i].CreationTimestamp.Before(&nodeCopies[j].CreationTimestamp)
 		})
 	case "newest":
 		sort.Slice(nodeCopies, func(i, j int) bool {
-			return nodeCopies[i].CreationTimestamp.Time.After(nodeCopies[j].CreationTimestamp.Time)
+			return nodeCopies[j].CreationTimestamp.Before(&nodeCopies[i].CreationTimestamp)
 		})
 	case "random":
 		rand.Shuffle(len(nodeCopies), func(i, j int) {
@@ -93,7 +97,7 @@ func (h *nodeLabelPolicyHandler) ApplyLabelsToNode(ctx context.Context, node *co
 		node.Labels[key] = value
 	}
 
-	node.Labels[managedByLabelKey] = "true"
+	node.Labels[managedByLabelKey] = managedByLabelValue
 
 	if err := h.client.Update(ctx, node); err != nil {
 		return fmt.Errorf("failed to update node %s: %w", node.Name, err)
@@ -114,7 +118,7 @@ func (h *nodeLabelPolicyHandler) RemoveLabelsFromUnselectedNodes(ctx context.Con
 			continue
 		}
 
-		if node.Labels != nil && node.Labels[managedByLabelKey] == "true" {
+		if node.Labels != nil && node.Labels[managedByLabelKey] == managedByLabelValue {
 			nodeCopy := node.DeepCopy()
 
 			delete(nodeCopy.Labels, managedByLabelKey)
@@ -153,7 +157,7 @@ func (h *nodeLabelPolicyHandler) CleanupLabelsFromAllNodes(ctx context.Context, 
 	policyLabelPrefix := fmt.Sprintf("%s.%s/", constants.ManagedByLabelPrefix, policyName)
 
 	for _, node := range nodeList.Items {
-		if node.Labels != nil && node.Labels[managedByLabelKey] == "true" {
+		if node.Labels != nil && node.Labels[managedByLabelKey] == managedByLabelValue {
 			nodeCopy := node.DeepCopy()
 
 			delete(nodeCopy.Labels, managedByLabelKey)
@@ -164,10 +168,8 @@ func (h *nodeLabelPolicyHandler) CleanupLabelsFromAllNodes(ctx context.Context, 
 				}
 			}
 
-			if policyLabels != nil {
-				for key := range policyLabels {
-					delete(nodeCopy.Labels, key)
-				}
+			for key := range policyLabels {
+				delete(nodeCopy.Labels, key)
 			}
 
 			if err := h.client.Update(ctx, nodeCopy); err != nil {
