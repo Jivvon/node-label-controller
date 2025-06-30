@@ -8,4 +8,14 @@ layout:
 - go.kubebuilder.io/v4
 projectName: node-label-controller
 repo: github.com/jivvon/node-label-controller
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: lento.dev
+  group: nlp
+  kind: NodeLabelPolicy
+  path: github.com/jivvon/node-label-controller/api/v1alpha1
+  version: v1alpha1
 version: "3"

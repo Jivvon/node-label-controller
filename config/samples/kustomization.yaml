@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- nlp_v1alpha1_nodelabelpolicy.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
