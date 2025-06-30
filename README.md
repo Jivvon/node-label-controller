@@ -1,135 +1,186 @@
-# node-label-controller
-// TODO(user): Add simple overview of use/purpose
+# Node Label Controller
+
+A Kubernetes controller that automatically applies labels to nodes based on configurable selection strategies.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+
+The Node Label Controller is a custom Kubernetes controller that manages node labeling through custom resources. It allows you to define policies that automatically select nodes and apply labels to them based on various strategies such as oldest, newest, or random selection.
+
+## Features
+
+- **Flexible Node Selection**: Choose nodes based on creation time (oldest/newest) or random selection
+- **Automatic Label Management**: Apply and remove labels automatically based on policies
+- **Policy-based Configuration**: Define labeling policies using Custom Resources
+- **Status Tracking**: Monitor which nodes are currently labeled by each policy
+
+## Usage
+
+### Node Selection Strategies
+
+The controller supports three node selection strategies:
+
+- **oldest**: Selects the oldest nodes (earliest creation time)
+- **newest**: Selects the newest nodes (latest creation time)
+- **random**: Selects nodes randomly
+
+### Example Policy
+
+```yaml
+apiVersion: nlp.lento.dev/v1alpha1
+kind: NodeLabelPolicy
+metadata:
+  name: nodelabelpolicy-sample
+spec:
+  strategy:
+    type: oldest
+    count: 3
+  labels:
+    environment: production
+    workload: critical
+    team: devops
+```
+
+This policy will:
+- Select the 3 oldest nodes in the cluster
+- Apply the labels `environment=production`, `workload=critical`, and `team=devops`
+- Automatically remove these labels from nodes that are no longer selected
 
 ## Getting Started
 
 ### Prerequisites
-- go version v1.24.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- Go version v1.24.0+
+- Docker version 17.03+
+- kubectl version v1.11.3+
+- Access to a Kubernetes v1.11.3+ cluster
 
-### To Deploy on the cluster
-**Build and push your image to the location specified by `IMG`:**
+### Installation
 
+1. **Build and push the image:**
 ```sh
-make docker-build docker-push IMG=<some-registry>/node-label-controller:tag
+make docker-build docker-push IMG=<your-registry>/node-label-controller:tag
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified.
-And it is required to have access to pull the image from the working environment.
-Make sure you have the proper permission to the registry if the above commands don’t work.
-
-**Install the CRDs into the cluster:**
-
+2. **Install the CRDs:**
 ```sh
 make install
 ```
 
-**Deploy the Manager to the cluster with the image specified by `IMG`:**
-
+3. **Deploy the controller:**
 ```sh
-make deploy IMG=<some-registry>/node-label-controller:tag
+make deploy IMG=<your-registry>/node-label-controller:tag
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin.
-
-**Create instances of your solution**
-You can apply the samples (examples) from the config/sample:
-
+4. **Apply sample policies:**
 ```sh
 kubectl apply -k config/samples/
 ```
 
->**NOTE**: Ensure that the samples has default values to test it out.
-
-### To Uninstall
-**Delete the instances (CRs) from the cluster:**
+### Uninstallation
 
 ```sh
 kubectl delete -k config/samples/
-```
-
-**Delete the APIs(CRDs) from the cluster:**
-
-```sh
 make uninstall
-```
-
-**UnDeploy the controller from the cluster:**
-
-```sh
 make undeploy
 ```
 
-## Project Distribution
+## Use Cases
 
-Following the options to release and provide this solution to the users.
+### Production Environment Management
+- Label production nodes with `environment=production`
+- Select nodes based on creation time for workload placement
 
-### By providing a bundle with all YAML files
+### Workload Distribution
+- Distribute workloads across different node groups
+- Use random selection for load balancing across nodes
 
-1. Build the installer for the image built and published in the registry:
+### Team Resource Allocation
+- Assign nodes to specific teams or projects
+- Track resource ownership through labels
 
-```sh
-make build-installer IMG=<some-registry>/node-label-controller:tag
+### Infrastructure Automation
+- Integrate with CI/CD pipelines for automated node labeling
+- Support infrastructure-as-code practices
+
+### Cost Optimization with DaemonSets
+
+A practical use case is combining DaemonSets with NodeSelectors and NodeLabelPolicy for cost optimization in dynamic environments.
+
+**Scenario**: Limit monitoring agent installation to only the 5 oldest nodes to reduce licensing costs.
+
+```yaml
+# NodeLabelPolicy to select oldest nodes
+apiVersion: nlp.lento.dev/v1alpha1
+kind: NodeLabelPolicy
+metadata:
+  name: monitoring-nodes
+spec:
+  strategy:
+    type: oldest
+    count: 5
+  labels:
+    monitoring: enabled
+    agent: datadog
+---
+# DaemonSet with NodeSelector
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: datadog-agent
+spec:
+  selector:
+    matchLabels:
+      name: datadog-agent
+  template:
+    metadata:
+      labels:
+        name: datadog-agent
+    spec:
+      nodeSelector:
+        monitoring: enabled
+        agent: datadog
+      containers:
+      - name: datadog-agent
+        image: datadog/agent:latest
+        # ... other configuration
 ```
 
-**NOTE:** The makefile target mentioned above generates an 'install.yaml'
-file in the dist directory. This file contains all the resources built
-with Kustomize, which are necessary to install this project without its
-dependencies.
+**Considerations for Dynamic Environments**:
 
-2. Using the installer
+When using this strategy with node autoscalers like Karpenter, consider the following configurations for stability:
 
-Users can just run 'kubectl apply -f <URL for YAML BUNDLE>' to install
-the project, i.e.:
-
-```sh
-kubectl apply -f https://raw.githubusercontent.com/<org>/node-label-controller/<tag or branch>/dist/install.yaml
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: your-workload
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: your-workload
+  template:
+    metadata:
+      labels:
+        app: your-workload
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
+    spec:
+      containers:
+      - name: your-app
+        image: your-app:latest
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
 ```
 
-### By providing a Helm Chart
-
-1. Build the chart using the optional helm plugin
-
-```sh
-kubebuilder edit --plugins=helm/v1-alpha
-```
-
-2. See that a chart was generated under 'dist/chart', and users
-can obtain this solution from there.
-
-**NOTE:** If you change the project, you need to update the Helm Chart
-using the same command above to sync the latest changes. Furthermore,
-if you create webhooks, you need to use the above command with
-the '--force' flag and manually ensure that any custom configuration
-previously added to 'dist/chart/values.yaml' or 'dist/chart/manager/manager.yaml'
-is manually re-applied afterwards.
+**Key Requirements**:
+- **`karpenter.sh/do-not-disrupt: "true"`**: Prevents node autoscalers from terminating pods during scale-in operations
+- **Horizontal Scaling**: Ensure your workloads can scale horizontally
 
 ## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run `make help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2025.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
+Contributions are welcome! Please feel free to submit a Pull Request.
