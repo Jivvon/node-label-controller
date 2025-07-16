@@ -91,6 +91,14 @@ var _ = BeforeSuite(func() {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-node-1",
 		},
+		Status: corev1.NodeStatus{
+			Conditions: []corev1.NodeCondition{
+				{
+					Type:   corev1.NodeReady,
+					Status: corev1.ConditionTrue,
+				},
+			},
+		},
 	}
 	Expect(k8sClient.Create(ctx, testNode)).To(Succeed())
 })

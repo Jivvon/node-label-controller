@@ -2,6 +2,8 @@
 package k8sfakes
 
 import (
+	"sync"
+
 	"github.com/go-logr/logr"
 	"github.com/jivvon/node-label-controller/internal/external/k8s"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -13,40 +15,709 @@ import (
 )
 
 type FakeBuilder struct {
-	ForStub      func(client.Object, ...builder.ForOption) k8s.Builder
-	CompleteStub func(reconcile.Reconciler) error
-}
-
-var _ k8s.Builder = &FakeBuilder{}
-
-func (f *FakeBuilder) For(obj client.Object, opts ...builder.ForOption) k8s.Builder {
-	if f.ForStub != nil {
-		return f.ForStub(obj, opts...)
+	BuildStub        func(reconcile.Reconciler) (controller.Controller, error)
+	buildMutex       sync.RWMutex
+	buildArgsForCall []struct {
+		arg1 reconcile.Reconciler
 	}
-	return f
-}
-
-func (f *FakeBuilder) Complete(r reconcile.Reconciler) error {
-	if f.CompleteStub != nil {
-		return f.CompleteStub(r)
+	buildReturns struct {
+		result1 controller.Controller
+		result2 error
 	}
-	return nil
+	buildReturnsOnCall map[int]struct {
+		result1 controller.Controller
+		result2 error
+	}
+	CompleteStub        func(reconcile.Reconciler) error
+	completeMutex       sync.RWMutex
+	completeArgsForCall []struct {
+		arg1 reconcile.Reconciler
+	}
+	completeReturns struct {
+		result1 error
+	}
+	completeReturnsOnCall map[int]struct {
+		result1 error
+	}
+	ForStub        func(client.Object, ...builder.ForOption) k8s.Builder
+	forMutex       sync.RWMutex
+	forArgsForCall []struct {
+		arg1 client.Object
+		arg2 []builder.ForOption
+	}
+	forReturns struct {
+		result1 k8s.Builder
+	}
+	forReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	NamedStub        func(string) k8s.Builder
+	namedMutex       sync.RWMutex
+	namedArgsForCall []struct {
+		arg1 string
+	}
+	namedReturns struct {
+		result1 k8s.Builder
+	}
+	namedReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	OwnsStub        func(client.Object, ...builder.OwnsOption) k8s.Builder
+	ownsMutex       sync.RWMutex
+	ownsArgsForCall []struct {
+		arg1 client.Object
+		arg2 []builder.OwnsOption
+	}
+	ownsReturns struct {
+		result1 k8s.Builder
+	}
+	ownsReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	WatchesStub        func(client.Object, handler.EventHandler, ...builder.WatchesOption) k8s.Builder
+	watchesMutex       sync.RWMutex
+	watchesArgsForCall []struct {
+		arg1 client.Object
+		arg2 handler.EventHandler
+		arg3 []builder.WatchesOption
+	}
+	watchesReturns struct {
+		result1 k8s.Builder
+	}
+	watchesReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	WithEventFilterStub        func(predicate.Predicate) k8s.Builder
+	withEventFilterMutex       sync.RWMutex
+	withEventFilterArgsForCall []struct {
+		arg1 predicate.Predicate
+	}
+	withEventFilterReturns struct {
+		result1 k8s.Builder
+	}
+	withEventFilterReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	WithLogConstructorStub        func(func(*reconcile.Request) logr.Logger) k8s.Builder
+	withLogConstructorMutex       sync.RWMutex
+	withLogConstructorArgsForCall []struct {
+		arg1 func(*reconcile.Request) logr.Logger
+	}
+	withLogConstructorReturns struct {
+		result1 k8s.Builder
+	}
+	withLogConstructorReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	WithOptionsStub        func(controller.Options) k8s.Builder
+	withOptionsMutex       sync.RWMutex
+	withOptionsArgsForCall []struct {
+		arg1 controller.Options
+	}
+	withOptionsReturns struct {
+		result1 k8s.Builder
+	}
+	withOptionsReturnsOnCall map[int]struct {
+		result1 k8s.Builder
+	}
+	invocations      map[string][][]interface{}
+	invocationsMutex sync.RWMutex
 }
 
-func (f *FakeBuilder) Owns(obj client.Object, opts ...builder.OwnsOption) k8s.Builder { return f }
-
-func (f *FakeBuilder) Watches(obj client.Object, h handler.EventHandler, opts ...builder.WatchesOption) k8s.Builder {
-	return f
+func (fake *FakeBuilder) Build(arg1 reconcile.Reconciler) (controller.Controller, error) {
+	fake.buildMutex.Lock()
+	ret, specificReturn := fake.buildReturnsOnCall[len(fake.buildArgsForCall)]
+	fake.buildArgsForCall = append(fake.buildArgsForCall, struct {
+		arg1 reconcile.Reconciler
+	}{arg1})
+	stub := fake.BuildStub
+	fakeReturns := fake.buildReturns
+	fake.recordInvocation("Build", []interface{}{arg1})
+	fake.buildMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (f *FakeBuilder) WithEventFilter(p predicate.Predicate) k8s.Builder { return f }
-
-func (f *FakeBuilder) WithOptions(options controller.Options) k8s.Builder { return f }
-
-func (f *FakeBuilder) WithLogConstructor(logConstructor func(*reconcile.Request) logr.Logger) k8s.Builder {
-	return f
+func (fake *FakeBuilder) BuildCallCount() int {
+	fake.buildMutex.RLock()
+	defer fake.buildMutex.RUnlock()
+	return len(fake.buildArgsForCall)
 }
 
-func (f *FakeBuilder) Named(name string) k8s.Builder { return f }
+func (fake *FakeBuilder) BuildCalls(stub func(reconcile.Reconciler) (controller.Controller, error)) {
+	fake.buildMutex.Lock()
+	defer fake.buildMutex.Unlock()
+	fake.BuildStub = stub
+}
 
-func (f *FakeBuilder) Build(r reconcile.Reconciler) (controller.Controller, error) { return nil, nil }
+func (fake *FakeBuilder) BuildArgsForCall(i int) reconcile.Reconciler {
+	fake.buildMutex.RLock()
+	defer fake.buildMutex.RUnlock()
+	argsForCall := fake.buildArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) BuildReturns(result1 controller.Controller, result2 error) {
+	fake.buildMutex.Lock()
+	defer fake.buildMutex.Unlock()
+	fake.BuildStub = nil
+	fake.buildReturns = struct {
+		result1 controller.Controller
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBuilder) BuildReturnsOnCall(i int, result1 controller.Controller, result2 error) {
+	fake.buildMutex.Lock()
+	defer fake.buildMutex.Unlock()
+	fake.BuildStub = nil
+	if fake.buildReturnsOnCall == nil {
+		fake.buildReturnsOnCall = make(map[int]struct {
+			result1 controller.Controller
+			result2 error
+		})
+	}
+	fake.buildReturnsOnCall[i] = struct {
+		result1 controller.Controller
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeBuilder) Complete(arg1 reconcile.Reconciler) error {
+	fake.completeMutex.Lock()
+	ret, specificReturn := fake.completeReturnsOnCall[len(fake.completeArgsForCall)]
+	fake.completeArgsForCall = append(fake.completeArgsForCall, struct {
+		arg1 reconcile.Reconciler
+	}{arg1})
+	stub := fake.CompleteStub
+	fakeReturns := fake.completeReturns
+	fake.recordInvocation("Complete", []interface{}{arg1})
+	fake.completeMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) CompleteCallCount() int {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	return len(fake.completeArgsForCall)
+}
+
+func (fake *FakeBuilder) CompleteCalls(stub func(reconcile.Reconciler) error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = stub
+}
+
+func (fake *FakeBuilder) CompleteArgsForCall(i int) reconcile.Reconciler {
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	argsForCall := fake.completeArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) CompleteReturns(result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	fake.completeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBuilder) CompleteReturnsOnCall(i int, result1 error) {
+	fake.completeMutex.Lock()
+	defer fake.completeMutex.Unlock()
+	fake.CompleteStub = nil
+	if fake.completeReturnsOnCall == nil {
+		fake.completeReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.completeReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeBuilder) For(arg1 client.Object, arg2 ...builder.ForOption) k8s.Builder {
+	fake.forMutex.Lock()
+	ret, specificReturn := fake.forReturnsOnCall[len(fake.forArgsForCall)]
+	fake.forArgsForCall = append(fake.forArgsForCall, struct {
+		arg1 client.Object
+		arg2 []builder.ForOption
+	}{arg1, arg2})
+	stub := fake.ForStub
+	fakeReturns := fake.forReturns
+	fake.recordInvocation("For", []interface{}{arg1, arg2})
+	fake.forMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) ForCallCount() int {
+	fake.forMutex.RLock()
+	defer fake.forMutex.RUnlock()
+	return len(fake.forArgsForCall)
+}
+
+func (fake *FakeBuilder) ForCalls(stub func(client.Object, ...builder.ForOption) k8s.Builder) {
+	fake.forMutex.Lock()
+	defer fake.forMutex.Unlock()
+	fake.ForStub = stub
+}
+
+func (fake *FakeBuilder) ForArgsForCall(i int) (client.Object, []builder.ForOption) {
+	fake.forMutex.RLock()
+	defer fake.forMutex.RUnlock()
+	argsForCall := fake.forArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeBuilder) ForReturns(result1 k8s.Builder) {
+	fake.forMutex.Lock()
+	defer fake.forMutex.Unlock()
+	fake.ForStub = nil
+	fake.forReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) ForReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.forMutex.Lock()
+	defer fake.forMutex.Unlock()
+	fake.ForStub = nil
+	if fake.forReturnsOnCall == nil {
+		fake.forReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.forReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) Named(arg1 string) k8s.Builder {
+	fake.namedMutex.Lock()
+	ret, specificReturn := fake.namedReturnsOnCall[len(fake.namedArgsForCall)]
+	fake.namedArgsForCall = append(fake.namedArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.NamedStub
+	fakeReturns := fake.namedReturns
+	fake.recordInvocation("Named", []interface{}{arg1})
+	fake.namedMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) NamedCallCount() int {
+	fake.namedMutex.RLock()
+	defer fake.namedMutex.RUnlock()
+	return len(fake.namedArgsForCall)
+}
+
+func (fake *FakeBuilder) NamedCalls(stub func(string) k8s.Builder) {
+	fake.namedMutex.Lock()
+	defer fake.namedMutex.Unlock()
+	fake.NamedStub = stub
+}
+
+func (fake *FakeBuilder) NamedArgsForCall(i int) string {
+	fake.namedMutex.RLock()
+	defer fake.namedMutex.RUnlock()
+	argsForCall := fake.namedArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) NamedReturns(result1 k8s.Builder) {
+	fake.namedMutex.Lock()
+	defer fake.namedMutex.Unlock()
+	fake.NamedStub = nil
+	fake.namedReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) NamedReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.namedMutex.Lock()
+	defer fake.namedMutex.Unlock()
+	fake.NamedStub = nil
+	if fake.namedReturnsOnCall == nil {
+		fake.namedReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.namedReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) Owns(arg1 client.Object, arg2 ...builder.OwnsOption) k8s.Builder {
+	fake.ownsMutex.Lock()
+	ret, specificReturn := fake.ownsReturnsOnCall[len(fake.ownsArgsForCall)]
+	fake.ownsArgsForCall = append(fake.ownsArgsForCall, struct {
+		arg1 client.Object
+		arg2 []builder.OwnsOption
+	}{arg1, arg2})
+	stub := fake.OwnsStub
+	fakeReturns := fake.ownsReturns
+	fake.recordInvocation("Owns", []interface{}{arg1, arg2})
+	fake.ownsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2...)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) OwnsCallCount() int {
+	fake.ownsMutex.RLock()
+	defer fake.ownsMutex.RUnlock()
+	return len(fake.ownsArgsForCall)
+}
+
+func (fake *FakeBuilder) OwnsCalls(stub func(client.Object, ...builder.OwnsOption) k8s.Builder) {
+	fake.ownsMutex.Lock()
+	defer fake.ownsMutex.Unlock()
+	fake.OwnsStub = stub
+}
+
+func (fake *FakeBuilder) OwnsArgsForCall(i int) (client.Object, []builder.OwnsOption) {
+	fake.ownsMutex.RLock()
+	defer fake.ownsMutex.RUnlock()
+	argsForCall := fake.ownsArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeBuilder) OwnsReturns(result1 k8s.Builder) {
+	fake.ownsMutex.Lock()
+	defer fake.ownsMutex.Unlock()
+	fake.OwnsStub = nil
+	fake.ownsReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) OwnsReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.ownsMutex.Lock()
+	defer fake.ownsMutex.Unlock()
+	fake.OwnsStub = nil
+	if fake.ownsReturnsOnCall == nil {
+		fake.ownsReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.ownsReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) Watches(arg1 client.Object, arg2 handler.EventHandler, arg3 ...builder.WatchesOption) k8s.Builder {
+	fake.watchesMutex.Lock()
+	ret, specificReturn := fake.watchesReturnsOnCall[len(fake.watchesArgsForCall)]
+	fake.watchesArgsForCall = append(fake.watchesArgsForCall, struct {
+		arg1 client.Object
+		arg2 handler.EventHandler
+		arg3 []builder.WatchesOption
+	}{arg1, arg2, arg3})
+	stub := fake.WatchesStub
+	fakeReturns := fake.watchesReturns
+	fake.recordInvocation("Watches", []interface{}{arg1, arg2, arg3})
+	fake.watchesMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) WatchesCallCount() int {
+	fake.watchesMutex.RLock()
+	defer fake.watchesMutex.RUnlock()
+	return len(fake.watchesArgsForCall)
+}
+
+func (fake *FakeBuilder) WatchesCalls(stub func(client.Object, handler.EventHandler, ...builder.WatchesOption) k8s.Builder) {
+	fake.watchesMutex.Lock()
+	defer fake.watchesMutex.Unlock()
+	fake.WatchesStub = stub
+}
+
+func (fake *FakeBuilder) WatchesArgsForCall(i int) (client.Object, handler.EventHandler, []builder.WatchesOption) {
+	fake.watchesMutex.RLock()
+	defer fake.watchesMutex.RUnlock()
+	argsForCall := fake.watchesArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+}
+
+func (fake *FakeBuilder) WatchesReturns(result1 k8s.Builder) {
+	fake.watchesMutex.Lock()
+	defer fake.watchesMutex.Unlock()
+	fake.WatchesStub = nil
+	fake.watchesReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WatchesReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.watchesMutex.Lock()
+	defer fake.watchesMutex.Unlock()
+	fake.WatchesStub = nil
+	if fake.watchesReturnsOnCall == nil {
+		fake.watchesReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.watchesReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithEventFilter(arg1 predicate.Predicate) k8s.Builder {
+	fake.withEventFilterMutex.Lock()
+	ret, specificReturn := fake.withEventFilterReturnsOnCall[len(fake.withEventFilterArgsForCall)]
+	fake.withEventFilterArgsForCall = append(fake.withEventFilterArgsForCall, struct {
+		arg1 predicate.Predicate
+	}{arg1})
+	stub := fake.WithEventFilterStub
+	fakeReturns := fake.withEventFilterReturns
+	fake.recordInvocation("WithEventFilter", []interface{}{arg1})
+	fake.withEventFilterMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) WithEventFilterCallCount() int {
+	fake.withEventFilterMutex.RLock()
+	defer fake.withEventFilterMutex.RUnlock()
+	return len(fake.withEventFilterArgsForCall)
+}
+
+func (fake *FakeBuilder) WithEventFilterCalls(stub func(predicate.Predicate) k8s.Builder) {
+	fake.withEventFilterMutex.Lock()
+	defer fake.withEventFilterMutex.Unlock()
+	fake.WithEventFilterStub = stub
+}
+
+func (fake *FakeBuilder) WithEventFilterArgsForCall(i int) predicate.Predicate {
+	fake.withEventFilterMutex.RLock()
+	defer fake.withEventFilterMutex.RUnlock()
+	argsForCall := fake.withEventFilterArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) WithEventFilterReturns(result1 k8s.Builder) {
+	fake.withEventFilterMutex.Lock()
+	defer fake.withEventFilterMutex.Unlock()
+	fake.WithEventFilterStub = nil
+	fake.withEventFilterReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithEventFilterReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.withEventFilterMutex.Lock()
+	defer fake.withEventFilterMutex.Unlock()
+	fake.WithEventFilterStub = nil
+	if fake.withEventFilterReturnsOnCall == nil {
+		fake.withEventFilterReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.withEventFilterReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithLogConstructor(arg1 func(*reconcile.Request) logr.Logger) k8s.Builder {
+	fake.withLogConstructorMutex.Lock()
+	ret, specificReturn := fake.withLogConstructorReturnsOnCall[len(fake.withLogConstructorArgsForCall)]
+	fake.withLogConstructorArgsForCall = append(fake.withLogConstructorArgsForCall, struct {
+		arg1 func(*reconcile.Request) logr.Logger
+	}{arg1})
+	stub := fake.WithLogConstructorStub
+	fakeReturns := fake.withLogConstructorReturns
+	fake.recordInvocation("WithLogConstructor", []interface{}{arg1})
+	fake.withLogConstructorMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) WithLogConstructorCallCount() int {
+	fake.withLogConstructorMutex.RLock()
+	defer fake.withLogConstructorMutex.RUnlock()
+	return len(fake.withLogConstructorArgsForCall)
+}
+
+func (fake *FakeBuilder) WithLogConstructorCalls(stub func(func(*reconcile.Request) logr.Logger) k8s.Builder) {
+	fake.withLogConstructorMutex.Lock()
+	defer fake.withLogConstructorMutex.Unlock()
+	fake.WithLogConstructorStub = stub
+}
+
+func (fake *FakeBuilder) WithLogConstructorArgsForCall(i int) func(*reconcile.Request) logr.Logger {
+	fake.withLogConstructorMutex.RLock()
+	defer fake.withLogConstructorMutex.RUnlock()
+	argsForCall := fake.withLogConstructorArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) WithLogConstructorReturns(result1 k8s.Builder) {
+	fake.withLogConstructorMutex.Lock()
+	defer fake.withLogConstructorMutex.Unlock()
+	fake.WithLogConstructorStub = nil
+	fake.withLogConstructorReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithLogConstructorReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.withLogConstructorMutex.Lock()
+	defer fake.withLogConstructorMutex.Unlock()
+	fake.WithLogConstructorStub = nil
+	if fake.withLogConstructorReturnsOnCall == nil {
+		fake.withLogConstructorReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.withLogConstructorReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithOptions(arg1 controller.Options) k8s.Builder {
+	fake.withOptionsMutex.Lock()
+	ret, specificReturn := fake.withOptionsReturnsOnCall[len(fake.withOptionsArgsForCall)]
+	fake.withOptionsArgsForCall = append(fake.withOptionsArgsForCall, struct {
+		arg1 controller.Options
+	}{arg1})
+	stub := fake.WithOptionsStub
+	fakeReturns := fake.withOptionsReturns
+	fake.recordInvocation("WithOptions", []interface{}{arg1})
+	fake.withOptionsMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeBuilder) WithOptionsCallCount() int {
+	fake.withOptionsMutex.RLock()
+	defer fake.withOptionsMutex.RUnlock()
+	return len(fake.withOptionsArgsForCall)
+}
+
+func (fake *FakeBuilder) WithOptionsCalls(stub func(controller.Options) k8s.Builder) {
+	fake.withOptionsMutex.Lock()
+	defer fake.withOptionsMutex.Unlock()
+	fake.WithOptionsStub = stub
+}
+
+func (fake *FakeBuilder) WithOptionsArgsForCall(i int) controller.Options {
+	fake.withOptionsMutex.RLock()
+	defer fake.withOptionsMutex.RUnlock()
+	argsForCall := fake.withOptionsArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeBuilder) WithOptionsReturns(result1 k8s.Builder) {
+	fake.withOptionsMutex.Lock()
+	defer fake.withOptionsMutex.Unlock()
+	fake.WithOptionsStub = nil
+	fake.withOptionsReturns = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) WithOptionsReturnsOnCall(i int, result1 k8s.Builder) {
+	fake.withOptionsMutex.Lock()
+	defer fake.withOptionsMutex.Unlock()
+	fake.WithOptionsStub = nil
+	if fake.withOptionsReturnsOnCall == nil {
+		fake.withOptionsReturnsOnCall = make(map[int]struct {
+			result1 k8s.Builder
+		})
+	}
+	fake.withOptionsReturnsOnCall[i] = struct {
+		result1 k8s.Builder
+	}{result1}
+}
+
+func (fake *FakeBuilder) Invocations() map[string][][]interface{} {
+	fake.invocationsMutex.RLock()
+	defer fake.invocationsMutex.RUnlock()
+	fake.buildMutex.RLock()
+	defer fake.buildMutex.RUnlock()
+	fake.completeMutex.RLock()
+	defer fake.completeMutex.RUnlock()
+	fake.forMutex.RLock()
+	defer fake.forMutex.RUnlock()
+	fake.namedMutex.RLock()
+	defer fake.namedMutex.RUnlock()
+	fake.ownsMutex.RLock()
+	defer fake.ownsMutex.RUnlock()
+	fake.watchesMutex.RLock()
+	defer fake.watchesMutex.RUnlock()
+	fake.withEventFilterMutex.RLock()
+	defer fake.withEventFilterMutex.RUnlock()
+	fake.withLogConstructorMutex.RLock()
+	defer fake.withLogConstructorMutex.RUnlock()
+	fake.withOptionsMutex.RLock()
+	defer fake.withOptionsMutex.RUnlock()
+	copiedInvocations := map[string][][]interface{}{}
+	for key, value := range fake.invocations {
+		copiedInvocations[key] = value
+	}
+	return copiedInvocations
+}
+
+func (fake *FakeBuilder) recordInvocation(key string, args []interface{}) {
+	fake.invocationsMutex.Lock()
+	defer fake.invocationsMutex.Unlock()
+	if fake.invocations == nil {
+		fake.invocations = map[string][][]interface{}{}
+	}
+	if fake.invocations[key] == nil {
+		fake.invocations[key] = [][]interface{}{}
+	}
+	fake.invocations[key] = append(fake.invocations[key], args)
+}
+
+var _ k8s.Builder = new(FakeBuilder)

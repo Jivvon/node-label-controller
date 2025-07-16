@@ -135,17 +135,41 @@ var _ = Describe("NodeLabelPolicyHandler", func() {
 						Name:              "node-old",
 						CreationTimestamp: oldTime,
 					},
+					Status: corev1.NodeStatus{
+						Conditions: []corev1.NodeCondition{
+							{
+								Type:   corev1.NodeReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "node-new",
 						CreationTimestamp: newTime,
 					},
+					Status: corev1.NodeStatus{
+						Conditions: []corev1.NodeCondition{
+							{
+								Type:   corev1.NodeReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
+					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "node-middle",
 						CreationTimestamp: now,
+					},
+					Status: corev1.NodeStatus{
+						Conditions: []corev1.NodeCondition{
+							{
+								Type:   corev1.NodeReady,
+								Status: corev1.ConditionTrue,
+							},
+						},
 					},
 				},
 			}
@@ -208,6 +232,140 @@ var _ = Describe("NodeLabelPolicyHandler", func() {
 			selected, err := handler.SelectNodes(ctx, nodes, strategy)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(selected).To(HaveLen(3))
+		})
+
+		Context("when dealing with NotReady nodes", func() {
+			var mixedNodes []corev1.Node
+
+			BeforeEach(func() {
+				now := metav1.Now()
+				oldTime := metav1.Time{Time: now.Add(-24 * time.Hour)}
+				newTime := metav1.Time{Time: now.Add(24 * time.Hour)}
+
+				mixedNodes = []corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:              "ready-old",
+							CreationTimestamp: oldTime,
+						},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionTrue,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:              "not-ready-oldest",
+							CreationTimestamp: metav1.Time{Time: oldTime.Add(-1 * time.Hour)},
+						},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionFalse,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:              "ready-new",
+							CreationTimestamp: newTime,
+						},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionTrue,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:              "unknown-middle",
+							CreationTimestamp: now,
+						},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionUnknown,
+								},
+							},
+						},
+					},
+				}
+			})
+
+			It("should filter out NotReady nodes and select only Ready nodes", func() {
+				strategy := nlpv1alpha1.NodeLabelPolicyStrategy{
+					Type:  "oldest",
+					Count: 2,
+				}
+
+				selected, err := handler.SelectNodes(ctx, mixedNodes, strategy)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(selected).To(HaveLen(2))
+
+				// Should only include ready nodes, and select oldest first
+				Expect(selected[0].Name).To(Equal("ready-old"))
+				Expect(selected[1].Name).To(Equal("ready-new"))
+			})
+
+			It("should return empty when no nodes are ready", func() {
+				notReadyNodes := []corev1.Node{
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "not-ready-1"},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionFalse,
+								},
+							},
+						},
+					},
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "unknown-1"},
+						Status: corev1.NodeStatus{
+							Conditions: []corev1.NodeCondition{
+								{
+									Type:   corev1.NodeReady,
+									Status: corev1.ConditionUnknown,
+								},
+							},
+						},
+					},
+				}
+
+				strategy := nlpv1alpha1.NodeLabelPolicyStrategy{
+					Type:  "oldest",
+					Count: 1,
+				}
+
+				selected, err := handler.SelectNodes(ctx, notReadyNodes, strategy)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(selected).To(BeEmpty())
+			})
+
+			It("should work with newest strategy filtering NotReady nodes", func() {
+				strategy := nlpv1alpha1.NodeLabelPolicyStrategy{
+					Type:  "newest",
+					Count: 1,
+				}
+
+				selected, err := handler.SelectNodes(ctx, mixedNodes, strategy)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(selected).To(HaveLen(1))
+
+				// Should select the newest ready node
+				Expect(selected[0].Name).To(Equal("ready-new"))
+			})
 		})
 	})
 

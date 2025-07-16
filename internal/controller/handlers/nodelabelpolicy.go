@@ -13,6 +13,7 @@ import (
 	nlpv1alpha1 "github.com/jivvon/node-label-controller/api/v1alpha1"
 	"github.com/jivvon/node-label-controller/internal/constants"
 	"github.com/jivvon/node-label-controller/internal/external/k8s"
+	"github.com/jivvon/node-label-controller/internal/utils"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -59,8 +60,14 @@ func (h *nodeLabelPolicyHandler) SelectNodes(ctx context.Context, nodes []corev1
 		return []corev1.Node{}, nil
 	}
 
-	nodeCopies := make([]corev1.Node, len(nodes))
-	copy(nodeCopies, nodes)
+	// Filter to only include Ready nodes
+	readyNodes := utils.FilterReadyNodes(nodes)
+	if len(readyNodes) == 0 {
+		return []corev1.Node{}, nil
+	}
+
+	nodeCopies := make([]corev1.Node, len(readyNodes))
+	copy(nodeCopies, readyNodes)
 
 	switch strategy.Type {
 	case "oldest":
