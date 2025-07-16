@@ -13,7 +13,7 @@ import (
 	nlpv1alpha1 "github.com/jivvon/node-label-controller/api/v1alpha1"
 	"github.com/jivvon/node-label-controller/internal/constants"
 	"github.com/jivvon/node-label-controller/internal/external/k8s"
-	"k8s.io/apimachinery/pkg/types"
+	"github.com/jivvon/node-label-controller/internal/utils"
 )
 
 const (
@@ -36,7 +36,7 @@ type NodeLabelPolicyHandler interface {
 	RemoveLabelsFromUnselectedNodes(ctx context.Context, allNodes []corev1.Node, selectedNodes []corev1.Node, managedByLabelKey string, policyLabels map[string]string) error
 
 	// CleanupLabelsFromAllNodes removes all labels related to a policy from all nodes
-	CleanupLabelsFromAllNodes(ctx context.Context, policyName string) error
+	CleanupLabelsFromAllNodes(ctx context.Context, policyName string, policyLabels map[string]string) error
 
 	// UpdatePolicyStatus updates the status of a NodeLabelPolicy
 	UpdatePolicyStatus(ctx context.Context, policy *nlpv1alpha1.NodeLabelPolicy, selectedNodeNames []string) error
@@ -59,8 +59,14 @@ func (h *nodeLabelPolicyHandler) SelectNodes(ctx context.Context, nodes []corev1
 		return []corev1.Node{}, nil
 	}
 
-	nodeCopies := make([]corev1.Node, len(nodes))
-	copy(nodeCopies, nodes)
+	// Filter to only include Ready nodes
+	readyNodes := utils.FilterReadyNodes(nodes)
+	if len(readyNodes) == 0 {
+		return []corev1.Node{}, nil
+	}
+
+	nodeCopies := make([]corev1.Node, len(readyNodes))
+	copy(nodeCopies, readyNodes)
 
 	switch strategy.Type {
 	case "oldest":
@@ -137,37 +143,31 @@ func (h *nodeLabelPolicyHandler) RemoveLabelsFromUnselectedNodes(ctx context.Con
 }
 
 // CleanupLabelsFromAllNodes removes all labels related to a policy from all nodes
-func (h *nodeLabelPolicyHandler) CleanupLabelsFromAllNodes(ctx context.Context, policyName string) error {
+// If policyLabels is nil, only managed-by and policy-prefix labels are removed
+func (h *nodeLabelPolicyHandler) CleanupLabelsFromAllNodes(ctx context.Context, policyName string, policyLabels map[string]string) error {
 	nodeList := &corev1.NodeList{}
 	if err := h.client.List(ctx, nodeList); err != nil {
 		return fmt.Errorf("failed to list nodes: %w", err)
 	}
 
 	managedByLabelKey := fmt.Sprintf("%s.%s/managed-by", constants.ManagedByLabelPrefix, policyName)
-
-	policy := &nlpv1alpha1.NodeLabelPolicy{}
-	if err := h.client.Get(ctx, types.NamespacedName{Name: policyName}, policy); err != nil {
-		policy = nil
-	}
-	var policyLabels map[string]string
-	if policy != nil {
-		policyLabels = policy.Spec.Labels
-	}
-
 	policyLabelPrefix := fmt.Sprintf("%s.%s/", constants.ManagedByLabelPrefix, policyName)
 
 	for _, node := range nodeList.Items {
 		if node.Labels != nil && node.Labels[managedByLabelKey] == managedByLabelValue {
 			nodeCopy := node.DeepCopy()
 
+			// Remove the managed-by label
 			delete(nodeCopy.Labels, managedByLabelKey)
 
+			// Remove any labels with policy-specific prefix
 			for key := range nodeCopy.Labels {
 				if strings.HasPrefix(key, policyLabelPrefix) {
 					delete(nodeCopy.Labels, key)
 				}
 			}
 
+			// Remove policy-specific labels (safe with nil map)
 			for key := range policyLabels {
 				delete(nodeCopy.Labels, key)
 			}

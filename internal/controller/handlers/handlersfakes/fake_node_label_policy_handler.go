@@ -25,11 +25,12 @@ type FakeNodeLabelPolicyHandler struct {
 	applyLabelsToNodeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CleanupLabelsFromAllNodesStub        func(context.Context, string) error
+	CleanupLabelsFromAllNodesStub        func(context.Context, string, map[string]string) error
 	cleanupLabelsFromAllNodesMutex       sync.RWMutex
 	cleanupLabelsFromAllNodesArgsForCall []struct {
 		arg1 context.Context
 		arg2 string
+		arg3 map[string]string
 	}
 	cleanupLabelsFromAllNodesReturns struct {
 		result1 error
@@ -148,19 +149,20 @@ func (fake *FakeNodeLabelPolicyHandler) ApplyLabelsToNodeReturnsOnCall(i int, re
 	}{result1}
 }
 
-func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodes(arg1 context.Context, arg2 string) error {
+func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodes(arg1 context.Context, arg2 string, arg3 map[string]string) error {
 	fake.cleanupLabelsFromAllNodesMutex.Lock()
 	ret, specificReturn := fake.cleanupLabelsFromAllNodesReturnsOnCall[len(fake.cleanupLabelsFromAllNodesArgsForCall)]
 	fake.cleanupLabelsFromAllNodesArgsForCall = append(fake.cleanupLabelsFromAllNodesArgsForCall, struct {
 		arg1 context.Context
 		arg2 string
-	}{arg1, arg2})
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
 	stub := fake.CleanupLabelsFromAllNodesStub
 	fakeReturns := fake.cleanupLabelsFromAllNodesReturns
-	fake.recordInvocation("CleanupLabelsFromAllNodes", []interface{}{arg1, arg2})
+	fake.recordInvocation("CleanupLabelsFromAllNodes", []interface{}{arg1, arg2, arg3})
 	fake.cleanupLabelsFromAllNodesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2)
+		return stub(arg1, arg2, arg3)
 	}
 	if specificReturn {
 		return ret.result1
@@ -174,17 +176,17 @@ func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesCallCount() int
 	return len(fake.cleanupLabelsFromAllNodesArgsForCall)
 }
 
-func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesCalls(stub func(context.Context, string) error) {
+func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesCalls(stub func(context.Context, string, map[string]string) error) {
 	fake.cleanupLabelsFromAllNodesMutex.Lock()
 	defer fake.cleanupLabelsFromAllNodesMutex.Unlock()
 	fake.CleanupLabelsFromAllNodesStub = stub
 }
 
-func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesArgsForCall(i int) (context.Context, string) {
+func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesArgsForCall(i int) (context.Context, string, map[string]string) {
 	fake.cleanupLabelsFromAllNodesMutex.RLock()
 	defer fake.cleanupLabelsFromAllNodesMutex.RUnlock()
 	argsForCall := fake.cleanupLabelsFromAllNodesArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
 }
 
 func (fake *FakeNodeLabelPolicyHandler) CleanupLabelsFromAllNodesReturns(result1 error) {
