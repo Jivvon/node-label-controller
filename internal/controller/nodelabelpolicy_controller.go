@@ -55,7 +55,8 @@ func (r *NodeLabelPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err := r.client.Get(ctx, req.NamespacedName, nodeLabelPolicy); err != nil {
 		if errors.IsNotFound(err) {
 			log.Info("NodeLabelPolicy not found, cleaning up labels from all nodes", "policyName", req.Name)
-			if err := r.handler.CleanupLabelsFromAllNodes(ctx, req.Name); err != nil {
+			// Pass nil since policy is already deleted and we only need to clean managed-by labels
+			if err := r.handler.CleanupLabelsFromAllNodes(ctx, req.Name, nil); err != nil {
 				log.Error(err, "Failed to cleanup labels from nodes", "policyName", req.Name)
 				return ctrl.Result{}, err
 			}
@@ -77,7 +78,8 @@ func (r *NodeLabelPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	} else {
 		if containsString(nodeLabelPolicy.Finalizers, finalizerName) {
-			if err := r.handler.CleanupLabelsFromAllNodes(ctx, nodeLabelPolicy.Name); err != nil {
+			// Pass the policy labels to ensure proper cleanup
+			if err := r.handler.CleanupLabelsFromAllNodes(ctx, nodeLabelPolicy.Name, nodeLabelPolicy.Spec.Labels); err != nil {
 				log.Error(err, "Failed to cleanup labels during deletion")
 				return ctrl.Result{}, err
 			}

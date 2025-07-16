@@ -406,4 +406,27 @@ var _ = Describe("NodeLabelPolicyHandler", func() {
 			Expect(node.Labels["environment"]).To(Equal("production"))
 		})
 	})
+
+	Describe("CleanupLabelsFromAllNodes", func() {
+		It("should handle nil policyLabels gracefully", func() {
+			// nil policyLabels should only remove managed-by and prefix labels
+			err := handler.CleanupLabelsFromAllNodes(ctx, "test-policy", nil)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should handle empty policyLabels map", func() {
+			// empty map should work the same as nil
+			err := handler.CleanupLabelsFromAllNodes(ctx, "test-policy", map[string]string{})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should handle non-empty policyLabels map", func() {
+			policyLabels := map[string]string{
+				"environment": "production",
+				"workload":    "monitoring",
+			}
+			err := handler.CleanupLabelsFromAllNodes(ctx, "test-policy", policyLabels)
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
 })
